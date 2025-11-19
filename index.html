@@ -144,6 +144,72 @@
         </div>
     </div>
 
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 transform transition-all scale-100 animate-[fadeIn_0.2s_ease-out] relative overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Edit Word</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <form id="edit-form" class="space-y-4">
+                <!-- Word Input -->
+                <div>
+                    <label for="edit-word" class="block text-sm font-medium text-gray-700 mb-1">Word <span class="text-red-500">*</span></label>
+                    <input type="text" id="edit-word" required placeholder="e.g. Ephemeral" 
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all">
+                </div>
+
+                <!-- Part of Speech -->
+                <div>
+                    <label for="edit-pos" class="block text-sm font-medium text-gray-700 mb-1">Part of Speech <span class="text-red-500">*</span></label>
+                    <select id="edit-pos" required 
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white">
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+
+                <!-- Meaning -->
+                <div>
+                    <label for="edit-meaning" class="block text-sm font-medium text-gray-700 mb-1">Meaning <span class="text-red-500">*</span></label>
+                    <textarea id="edit-meaning" required rows="3" placeholder="Definition of the word..." 
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"></textarea>
+                </div>
+
+                <!-- Sentence (Optional) -->
+                <div>
+                    <label for="edit-sentence" class="block text-sm font-medium text-gray-700 mb-1">Example Sentence <span class="text-gray-400 font-normal">(Optional)</span></label>
+                    <textarea id="edit-sentence" rows="2" placeholder="Use it in a sentence..." 
+                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"></textarea>
+                </div>
+
+                <!-- Tags (Optional) -->
+                <div>
+                    <label for="edit-tags" class="block text-sm font-medium text-gray-700 mb-1">Tags <span class="text-gray-400 font-normal">(Optional)</span></label>
+                    <div class="relative">
+                        <i class="fas fa-tag absolute left-3 top-3 text-gray-400 text-xs"></i>
+                        <input type="text" id="edit-tags" placeholder="work, difficult, travel" 
+                            class="w-full pl-8 pr-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 mb-2">Comma separated</p>
+                    
+                    <!-- Quick Tags Section -->
+                    <div id="edit-quick-tags-container" class="flex flex-wrap gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">Cancel</button>
+                    <button type="submit" 
+                        class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Detail View Modal -->
     <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 transform transition-all scale-100 animate-[fadeIn_0.2s_ease-out] relative overflow-y-auto max-h-[90vh]">
@@ -514,14 +580,19 @@
         const pendingConnContainer = document.getElementById('pending-connections');
         const datalist = document.getElementById('existing-words');
         const connectModal = document.getElementById('connect-modal');
+        const editModal = document.getElementById('edit-modal');
+        const editForm = document.getElementById('edit-form');
         const detailModal = document.getElementById('detail-modal');
         const alertModal = document.getElementById('alert-modal');
         const confirmModal = document.getElementById('confirm-modal');
         const posSelect = document.getElementById('pos');
+        const editPosSelect = document.getElementById('edit-pos');
         const settingsTagsList = document.getElementById('settings-tags-list');
         const newTagInput = document.getElementById('new-tag-input');
         const quickTagsContainer = document.getElementById('quick-tags-container');
+        const editQuickTagsContainer = document.getElementById('edit-quick-tags-container');
         const tagsInput = document.getElementById('tags');
+        const editTagsInput = document.getElementById('edit-tags');
         
         // Practice Elements
         const practiceSetup = document.getElementById('practice-setup');
@@ -737,6 +808,76 @@
         });
 
 
+        // --- Edit Modal ---
+        window.openEditModal = (id) => {
+            const item = vocabList.find(w => w.id === id);
+            if (!item) return;
+            
+            currentEditingId = id;
+            
+            // Populate form fields
+            document.getElementById('edit-word').value = item.word;
+            document.getElementById('edit-meaning').value = item.meaning;
+            document.getElementById('edit-sentence').value = item.sentence || '';
+            document.getElementById('edit-tags').value = item.tags.join(', ');
+            
+            // Set part of speech
+            renderEditPosOptions(item.pos);
+            
+            // Show modal
+            editModal.classList.remove('hidden');
+            document.getElementById('edit-word').focus();
+        };
+
+        window.closeEditModal = () => {
+            editModal.classList.add('hidden');
+            currentEditingId = null;
+        };
+
+        // Handle edit form submission
+        editForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!currentEditingId) return;
+            
+            const index = vocabList.findIndex(w => w.id === currentEditingId);
+            if (index === -1) return;
+            
+            // Update the word
+            vocabList[index] = {
+                ...vocabList[index],
+                word: document.getElementById('edit-word').value.trim(),
+                pos: document.getElementById('edit-pos').value,
+                meaning: document.getElementById('edit-meaning').value.trim(),
+                sentence: document.getElementById('edit-sentence').value.trim(),
+                tags: document.getElementById('edit-tags').value.split(',').map(t => t.trim()).filter(t => t)
+            };
+            
+            // Update connections that reference this word
+            vocabList.forEach((word, i) => {
+                if (word.connections) {
+                    word.connections.forEach(conn => {
+                        if (conn.word.toLowerCase() === vocabList[index].word.toLowerCase()) {
+                            // Update the connection to use the new word
+                            conn.word = vocabList[index].word;
+                        }
+                    });
+                }
+            });
+            
+            saveData();
+            renderList(vocabList);
+            updateDatalist();
+            closeEditModal();
+            showToast(`Updated "${vocabList[index].word}" successfully!`);
+        });
+
+        function renderEditPosOptions(selectedPos) {
+            editPosSelect.innerHTML = defaultTypes.map(type => 
+                `<option value="${type}" ${type === selectedPos ? 'selected' : ''}>${type}</option>`
+            ).join('');
+        }
+
         // --- Detail View Modal ---
         window.openDetailModal = (id) => {
             const item = vocabList.find(w => w.id === id);
@@ -803,6 +944,9 @@
                 ${item.tags.length > 0 ? `<div class="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-2">${tagsHtml}</div>` : ''}
                 
                 <div class="mt-8 flex justify-end gap-3 border-t border-gray-100 pt-4">
+                    <button onclick="openEditModal(${item.id}); closeDetailModal();" class="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors flex items-center gap-2">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
                     <button onclick="openConnectModal(${item.id}); closeDetailModal();" class="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-colors flex items-center gap-2">
                         <i class="fas fa-link"></i> Connect
                     </button>
@@ -821,6 +965,11 @@
         };
         detailModal.addEventListener('click', (e) => {
             if (e.target === detailModal) closeDetailModal();
+        });
+
+        // Close Edit Modal on outside click
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) closeEditModal();
         });
 
         // --- Filter Options ---
@@ -866,6 +1015,7 @@
         function renderQuickTags() {
             if(savedTags.length === 0) {
                 quickTagsContainer.innerHTML = '';
+                editQuickTagsContainer.innerHTML = '';
                 return;
             }
             quickTagsContainer.innerHTML = '<span class="text-xs text-gray-400 self-center mr-1">Quick Add:</span>' + 
@@ -873,6 +1023,15 @@
                     const escapedTag = tag.replace(/'/g, "\\'");
                     return `
                     <button type="button" onclick="addTagToInput('${escapedTag}')" class="px-2 py-1 rounded-md bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100 hover:bg-indigo-100 transition-colors">
+                        + ${tag}
+                    </button>
+                `}).join('');
+                
+            editQuickTagsContainer.innerHTML = '<span class="text-xs text-gray-400 self-center mr-1">Quick Add:</span>' + 
+                savedTags.map(tag => {
+                    const escapedTag = tag.replace(/'/g, "\\'");
+                    return `
+                    <button type="button" onclick="addTagToEditInput('${escapedTag}')" class="px-2 py-1 rounded-md bg-indigo-50 text-indigo-600 text-xs font-medium border border-indigo-100 hover:bg-indigo-100 transition-colors">
                         + ${tag}
                     </button>
                 `}).join('');
@@ -937,6 +1096,17 @@
                 tagsInput.value = current + tag;
             }
             tagsInput.focus();
+        };
+
+        window.addTagToEditInput = (tag) => {
+            const current = editTagsInput.value.trim();
+            if(current.includes(tag)) return;
+            if(current.length > 0 && !current.endsWith(',')) {
+                editTagsInput.value = current + ', ' + tag;
+            } else {
+                editTagsInput.value = current + tag;
+            }
+            editTagsInput.focus();
         };
 
         function saveTags() {
@@ -1261,6 +1431,9 @@
                     <div class="absolute top-4 right-4 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex gap-1 sm:gap-2 z-20 bg-white sm:bg-transparent rounded-lg p-1 sm:p-0 shadow-sm sm:shadow-none border sm:border-0 border-gray-100">
                         <button onclick="event.stopPropagation(); speakWord('${item.word.replace(/'/g, "\\'")}')" class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-full focus:outline-none focus:ring-2 focus:ring-green-200" title="Listen">
                             <i class="fas fa-volume-up"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); openEditModal(${item.id})" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-200" title="Edit">
+                            <i class="fas fa-edit"></i>
                         </button>
                         <button onclick="event.stopPropagation(); openConnectModal(${item.id})" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-200" title="Add Connection">
                             <i class="fas fa-link"></i>
