@@ -63,6 +63,58 @@
         .flashcard.flipped .flashcard-inner {
             transform: rotateY(180deg);
         }
+        
+        /* Multi-select styles */
+        .multi-select-container {
+            position: relative;
+        }
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+        }
+        .multi-select-dropdown.show {
+            display: block;
+        }
+        .multi-select-option {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .multi-select-option:hover {
+            background-color: #f3f4f6;
+        }
+        .multi-select-option.selected {
+            background-color: #e0e7ff;
+        }
+        .selected-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .selected-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background-color: #e0e7ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: #3730a3;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -160,13 +212,21 @@
                         class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all">
                 </div>
 
-                <!-- Part of Speech -->
+                <!-- Part of Speech - Multi-select -->
                 <div>
-                    <label for="edit-pos" class="block text-sm font-medium text-gray-700 mb-1">Part of Speech <span class="text-red-500">*</span></label>
-                    <select id="edit-pos" required 
-                        class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white">
-                        <!-- Options populated by JS -->
-                    </select>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Parts of Speech <span class="text-red-500">*</span></label>
+                    <div class="multi-select-container">
+                        <div onclick="toggleMultiSelectDropdown('edit')" class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all bg-white cursor-pointer flex items-center justify-between">
+                            <span id="edit-pos-placeholder" class="text-gray-400">Select parts of speech...</span>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                        <div id="edit-pos-dropdown" class="multi-select-dropdown">
+                            <!-- Options populated by JS -->
+                        </div>
+                        <div id="edit-selected-pos" class="selected-tags">
+                            <!-- Selected parts of speech will appear here -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Meaning -->
@@ -273,14 +333,21 @@
                             class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all">
                     </div>
 
-                    <!-- Part of Speech -->
+                    <!-- Part of Speech - Multi-select -->
                     <div>
-                        <label for="pos" class="block text-sm font-medium text-gray-700 mb-1">Part of Speech <span class="text-red-500">*</span></label>
-                        <select id="pos" required 
-                            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white">
-                            <option value="" disabled selected>Select type...</option>
-                            <!-- Options populated by JS -->
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Parts of Speech <span class="text-red-500">*</span></label>
+                        <div class="multi-select-container">
+                            <div onclick="toggleMultiSelectDropdown('add')" class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all bg-white cursor-pointer flex items-center justify-between">
+                                <span id="add-pos-placeholder" class="text-gray-400">Select parts of speech...</span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </div>
+                            <div id="add-pos-dropdown" class="multi-select-dropdown">
+                                <!-- Options populated by JS -->
+                            </div>
+                            <div id="add-selected-pos" class="selected-tags">
+                                <!-- Selected parts of speech will appear here -->
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Meaning -->
@@ -451,7 +518,9 @@
                         <div class="absolute w-full h-full backface-hidden bg-white rounded-2xl border-2 border-indigo-50 flex flex-col items-center justify-center p-8 text-center">
                             <span class="text-sm uppercase tracking-widest text-gray-400 mb-4 font-semibold">Word</span>
                             <h2 id="fc-front-word" class="text-4xl sm:text-5xl font-bold text-gray-900 font-serif-display mb-4">Ephemeral</h2>
-                            <span id="fc-front-pos" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Adjective</span>
+                            <div id="fc-front-pos" class="flex flex-wrap gap-1 justify-center">
+                                <!-- Parts of speech will be injected here -->
+                            </div>
                             
                             <div class="absolute bottom-8 text-gray-400 text-sm animate-pulse">
                                 <i class="fas fa-sync-alt mr-2"></i> Click to flip
@@ -567,6 +636,12 @@
         let practiceIndex = 0;
         let currentPracticeCard = null;
 
+        // Multi-select state
+        let selectedPositions = {
+            add: [],
+            edit: []
+        };
+
         // DOM Elements
         const form = document.getElementById('vocab-form');
         const listContainer = document.getElementById('vocab-list');
@@ -585,8 +660,6 @@
         const detailModal = document.getElementById('detail-modal');
         const alertModal = document.getElementById('alert-modal');
         const confirmModal = document.getElementById('confirm-modal');
-        const posSelect = document.getElementById('pos');
-        const editPosSelect = document.getElementById('edit-pos');
         const settingsTagsList = document.getElementById('settings-tags-list');
         const newTagInput = document.getElementById('new-tag-input');
         const quickTagsContainer = document.getElementById('quick-tags-container');
@@ -669,13 +742,17 @@
             'Verb': 'bg-green-100 text-green-700 border-green-200',
             'Adjective': 'bg-purple-100 text-purple-700 border-purple-200',
             'Adverb': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+            'Preposition': 'bg-pink-100 text-pink-700 border-pink-200',
+            'Conjunction': 'bg-indigo-100 text-indigo-700 border-indigo-200',
+            'Idiom': 'bg-red-100 text-red-700 border-red-200',
+            'Phrase': 'bg-teal-100 text-teal-700 border-teal-200',
             'default': 'bg-gray-100 text-gray-700 border-gray-200'
         };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             renderList(vocabList);
-            renderPosOptions();
+            renderMultiSelectOptions();
             renderSettingsTags();
             renderQuickTags();
             updateTagFilterOptions();
@@ -683,7 +760,122 @@
             
             // Initialize Practice Filter
             updatePracticeFilter();
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.multi-select-container')) {
+                    closeAllDropdowns();
+                }
+            });
         });
+
+        // --- Multi-select Functions ---
+        function renderMultiSelectOptions() {
+            const addDropdown = document.getElementById('add-pos-dropdown');
+            const editDropdown = document.getElementById('edit-pos-dropdown');
+            
+            const optionsHtml = defaultTypes.map(type => `
+                <div class="multi-select-option" onclick="togglePosSelection('${type}', 'add')">
+                    <input type="checkbox" id="add-pos-${type}" class="hidden">
+                    <i class="fas fa-check text-indigo-600 opacity-0 w-4"></i>
+                    <span>${type}</span>
+                </div>
+            `).join('');
+            
+            addDropdown.innerHTML = optionsHtml;
+            editDropdown.innerHTML = optionsHtml.replace(/add/g, 'edit');
+        }
+
+        window.toggleMultiSelectDropdown = (type) => {
+            const dropdown = document.getElementById(`${type}-pos-dropdown`);
+            const allDropdowns = document.querySelectorAll('.multi-select-dropdown');
+            
+            allDropdowns.forEach(d => {
+                if (d !== dropdown) d.classList.remove('show');
+            });
+            
+            dropdown.classList.toggle('show');
+        };
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('.multi-select-dropdown').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+        }
+
+        window.togglePosSelection = (pos, type) => {
+            const index = selectedPositions[type].indexOf(pos);
+            const option = document.querySelector(`#${type}-pos-dropdown .multi-select-option:nth-child(${defaultTypes.indexOf(pos) + 1})`);
+            const checkbox = document.getElementById(`${type}-pos-${pos}`);
+            const icon = option.querySelector('i');
+            
+            if (index === -1) {
+                // Add to selection
+                selectedPositions[type].push(pos);
+                icon.classList.remove('opacity-0');
+                option.classList.add('selected');
+            } else {
+                // Remove from selection
+                selectedPositions[type].splice(index, 1);
+                icon.classList.add('opacity-0');
+                option.classList.remove('selected');
+            }
+            
+            updateSelectedPosDisplay(type);
+        };
+
+        function updateSelectedPosDisplay(type) {
+            const container = document.getElementById(`${type}-selected-pos`);
+            const placeholder = document.getElementById(`${type}-pos-placeholder`);
+            
+            container.innerHTML = '';
+            
+            if (selectedPositions[type].length === 0) {
+                placeholder.textContent = 'Select parts of speech...';
+                placeholder.classList.add('text-gray-400');
+            } else {
+                placeholder.textContent = '';
+                
+                selectedPositions[type].forEach(pos => {
+                    const tag = document.createElement('span');
+                    tag.className = 'selected-tag';
+                    tag.innerHTML = `
+                        ${pos}
+                        <button type="button" onclick="removePosSelection('${pos}', '${type}')" class="hover:text-indigo-900">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    `;
+                    container.appendChild(tag);
+                });
+            }
+        }
+
+        window.removePosSelection = (pos, type) => {
+            const index = selectedPositions[type].indexOf(pos);
+            if (index !== -1) {
+                selectedPositions[type].splice(index, 1);
+                updateSelectedPosDisplay(type);
+                
+                // Also update the dropdown visual state
+                const option = document.querySelector(`#${type}-pos-dropdown .multi-select-option:nth-child(${defaultTypes.indexOf(pos) + 1})`);
+                const icon = option.querySelector('i');
+                icon.classList.add('opacity-0');
+                option.classList.remove('selected');
+            }
+        };
+
+        function clearPosSelection(type) {
+            selectedPositions[type] = [];
+            updateSelectedPosDisplay(type);
+            
+            // Reset all dropdown options
+            defaultTypes.forEach(pos => {
+                const option = document.querySelector(`#${type}-pos-dropdown .multi-select-option:nth-child(${defaultTypes.indexOf(pos) + 1})`);
+                const icon = option.querySelector('i');
+                icon.classList.add('opacity-0');
+                option.classList.remove('selected');
+            });
+        }
 
         // --- Practice Mode Logic ---
         function updatePracticeFilter() {
@@ -742,11 +934,13 @@
             
             // Front
             fcFrontWord.textContent = currentPracticeCard.word;
-            fcFrontPos.textContent = currentPracticeCard.pos;
-            const posClass = posColors[currentPracticeCard.pos] || posColors['default'];
-            // Reset all possible color classes then add current
-            fcFrontPos.className = `px-3 py-1 rounded-full text-sm font-medium border ${posClass}`;
-
+            
+            // Multiple parts of speech
+            fcFrontPos.innerHTML = currentPracticeCard.pos.map(pos => {
+                const posClass = posColors[pos] || posColors['default'];
+                return `<span class="px-2 py-1 rounded-full text-xs font-medium border ${posClass}">${pos}</span>`;
+            }).join('');
+            
             // Back
             // Allow a small delay to update back content so user doesn't see it change while flipping back
             setTimeout(() => {
@@ -821,8 +1015,22 @@
             document.getElementById('edit-sentence').value = item.sentence || '';
             document.getElementById('edit-tags').value = item.tags.join(', ');
             
-            // Set part of speech
-            renderEditPosOptions(item.pos);
+            // Set parts of speech
+            selectedPositions.edit = Array.isArray(item.pos) ? [...item.pos] : [item.pos];
+            updateSelectedPosDisplay('edit');
+            
+            // Update dropdown visual state
+            defaultTypes.forEach(pos => {
+                const option = document.querySelector(`#edit-pos-dropdown .multi-select-option:nth-child(${defaultTypes.indexOf(pos) + 1})`);
+                const icon = option.querySelector('i');
+                if (selectedPositions.edit.includes(pos)) {
+                    icon.classList.remove('opacity-0');
+                    option.classList.add('selected');
+                } else {
+                    icon.classList.add('opacity-0');
+                    option.classList.remove('selected');
+                }
+            });
             
             // Show modal
             editModal.classList.remove('hidden');
@@ -832,6 +1040,7 @@
         window.closeEditModal = () => {
             editModal.classList.add('hidden');
             currentEditingId = null;
+            clearPosSelection('edit');
         };
 
         // Handle edit form submission
@@ -843,11 +1052,17 @@
             const index = vocabList.findIndex(w => w.id === currentEditingId);
             if (index === -1) return;
             
+            // Validate at least one part of speech is selected
+            if (selectedPositions.edit.length === 0) {
+                showAlert('Please select at least one part of speech.');
+                return;
+            }
+            
             // Update the word
             vocabList[index] = {
                 ...vocabList[index],
                 word: document.getElementById('edit-word').value.trim(),
-                pos: document.getElementById('edit-pos').value,
+                pos: [...selectedPositions.edit], // Store as array
                 meaning: document.getElementById('edit-meaning').value.trim(),
                 sentence: document.getElementById('edit-sentence').value.trim(),
                 tags: document.getElementById('edit-tags').value.split(',').map(t => t.trim()).filter(t => t)
@@ -872,18 +1087,18 @@
             showToast(`Updated "${vocabList[index].word}" successfully!`);
         });
 
-        function renderEditPosOptions(selectedPos) {
-            editPosSelect.innerHTML = defaultTypes.map(type => 
-                `<option value="${type}" ${type === selectedPos ? 'selected' : ''}>${type}</option>`
-            ).join('');
-        }
-
         // --- Detail View Modal ---
         window.openDetailModal = (id) => {
             const item = vocabList.find(w => w.id === id);
             if (!item) return;
 
-            const posClass = posColors[item.pos] || posColors['default'];
+            // Handle both array and string pos for backward compatibility
+            const posArray = Array.isArray(item.pos) ? item.pos : [item.pos];
+            const posHtml = posArray.map(pos => {
+                const posClass = posColors[pos] || posColors['default'];
+                return `<span class="px-3 py-1 rounded-full text-sm font-semibold border ${posClass}">${pos}</span>`;
+            }).join('');
+            
             const tagsHtml = item.tags.map(tag => `<span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">#${tag}</span>`).join('');
             
             const connectionsHtml = (item.connections && item.connections.length > 0)
@@ -892,9 +1107,9 @@
                     <div class="grid grid-cols-1 gap-3">
                         ${item.connections.map(c => {
                             const linkedWord = vocabList.find(w => w.word.toLowerCase() === c.word.toLowerCase());
-                            const linkedPos = linkedWord ? linkedWord.pos : 'N/A';
+                            const linkedPos = linkedWord ? (Array.isArray(linkedWord.pos) ? linkedWord.pos.join(', ') : linkedWord.pos) : 'N/A';
                             const linkedMeaning = linkedWord ? linkedWord.meaning : 'Definition not available';
-                            const linkedPosStyle = linkedWord && posColors[linkedWord.pos] ? posColors[linkedWord.pos] : 'bg-gray-200 text-gray-600 border-gray-300';
+                            const linkedPosStyle = 'bg-gray-200 text-gray-600 border-gray-300'; // Simplified for multiple POS
 
                             return `
                             <div onclick="searchFor('${c.word}'); closeDetailModal();" class="flex flex-col sm:flex-row gap-2 sm:gap-4 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-indigo-50 hover:border-indigo-100 transition-all cursor-pointer group">
@@ -928,7 +1143,9 @@
                         <button onclick="speakWord('${item.word.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-indigo-50" title="Listen">
                             <i class="fas fa-volume-up text-xl"></i>
                         </button>
-                        <span class="px-3 py-1 rounded-full text-sm font-semibold border ${posClass}">${item.pos}</span>
+                        <div class="flex flex-wrap gap-2">
+                            ${posHtml}
+                        </div>
                     </div>
                     <div class="text-gray-400 text-sm mb-4">Added on ${item.dateAdded || 'Unknown date'}</div>
                 </div>
@@ -981,21 +1198,22 @@
                 if (word.tags) word.tags.forEach(tag => allTags.add(tag));
             });
             const sortedTags = Array.from(allTags).sort();
+            
+            // Update filter options to show all parts of speech
+            const allPositions = new Set();
+            vocabList.forEach(word => {
+                const posArray = Array.isArray(word.pos) ? word.pos : [word.pos];
+                posArray.forEach(pos => allPositions.add(pos));
+            });
+            const sortedPositions = Array.from(allPositions).sort();
+            
+            filterPos.innerHTML = '<option value="all">All Types</option>' + 
+                sortedPositions.map(pos => `<option value="${pos}">${pos}</option>`).join('');
+            
             filterTag.innerHTML = '<option value="all">All Tags</option>' + 
                 sortedTags.map(tag => `<option value="${tag}">#${tag}</option>`).join('');
+                
             if (allTags.has(currentSelection)) filterTag.value = currentSelection;
-        }
-
-        function renderPosOptions() {
-            const currentVal = posSelect.value;
-            posSelect.innerHTML = '<option value="" disabled selected>Select type...</option>' + 
-                defaultTypes.map(type => `<option value="${type}">${type}</option>`).join('');
-            if (defaultTypes.includes(currentVal)) posSelect.value = currentVal;
-
-            const currentFilter = filterPos.value;
-            filterPos.innerHTML = '<option value="all">All Types</option>' + 
-                defaultTypes.map(type => `<option value="${type}">${type}s</option>`).join('');
-            filterPos.value = currentFilter;
         }
 
         // --- Tag Management ---
@@ -1237,10 +1455,16 @@
 
             const newWordText = document.getElementById('word').value.trim();
 
+            // Validate at least one part of speech is selected
+            if (selectedPositions.add.length === 0) {
+                showAlert('Please select at least one part of speech.');
+                return;
+            }
+
             const newWord = {
                 id: Date.now(),
                 word: newWordText,
-                pos: document.getElementById('pos').value,
+                pos: [...selectedPositions.add], // Store as array
                 meaning: document.getElementById('meaning').value.trim(),
                 sentence: document.getElementById('sentence').value.trim(),
                 connections: [...currentConnections],
@@ -1274,6 +1498,7 @@
             
             form.reset();
             currentConnections = [];
+            clearPosSelection('add');
             renderPendingConnections();
             updateDatalist();
 
@@ -1297,7 +1522,9 @@
                     item.tags.some(tag => tag.toLowerCase().includes(term)) ||
                     (item.connections && item.connections.some(c => c.word.toLowerCase().includes(term)));
                 
-                const matchesPos = posFilter === 'all' || item.pos === posFilter;
+                // Handle both array and string pos for backward compatibility
+                const posArray = Array.isArray(item.pos) ? item.pos : [item.pos];
+                const matchesPos = posFilter === 'all' || posArray.includes(posFilter);
                 const matchesTag = tagFilter === 'all' || item.tags.includes(tagFilter);
 
                 return matchesTerm && matchesPos && matchesTag;
@@ -1397,7 +1624,13 @@
             emptyState.classList.add('hidden');
 
             list.forEach(item => {
-                const posClass = posColors[item.pos] || posColors['default'];
+                // Handle both array and string pos for backward compatibility
+                const posArray = Array.isArray(item.pos) ? item.pos : [item.pos];
+                const posHtml = posArray.map(pos => {
+                    const posClass = posColors[pos] || posColors['default'];
+                    return `<span class="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${posClass}">${pos}</span>`;
+                }).join('');
+                
                 const tags = item.tags || [];
                 const tagsHtml = tags.length > 0 
                     ? `<div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-50 pointer-events-none">
@@ -1446,9 +1679,11 @@
                         </button>
                     </div>
 
-                    <div class="flex items-baseline gap-3 mb-1 pr-32 sm:pr-36">
+                    <div class="flex items-baseline gap-3 mb-1 pr-32 sm:pr-36 flex-wrap">
                         <h3 class="text-xl sm:text-2xl font-bold text-gray-900 font-serif-display tracking-wide break-words">${item.word}</h3>
-                        <span class="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${posClass}">${item.pos}</span>
+                        <div class="flex flex-wrap gap-1">
+                            ${posHtml}
+                        </div>
                     </div>
 
                     <p class="text-gray-600 mt-2 leading-relaxed text-sm sm:text-base">${item.meaning}</p>
