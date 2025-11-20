@@ -441,6 +441,14 @@
 
                 <!-- Filter Controls -->
                 <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+                    <!-- NEW: Sort Dropdown -->
+                    <select id="sort-order" onchange="filterWords()" class="flex-1 sm:flex-none px-4 py-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-200 outline-none text-sm text-gray-600 cursor-pointer min-w-[120px]">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="az">A to Z</option>
+                        <option value="za">Z to A</option>
+                    </select>
+                    
                     <select id="filter-pos" class="flex-1 sm:flex-none px-4 py-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-200 outline-none text-sm text-gray-600 cursor-pointer min-w-[120px]">
                         <option value="all">All Types</option>
                         <!-- Options populated by JS -->
@@ -679,6 +687,7 @@
         const searchInput = document.getElementById('search-input');
         const filterPos = document.getElementById('filter-pos');
         const filterTag = document.getElementById('filter-tag');
+        const sortOrder = document.getElementById('sort-order'); // NEW
         const emptyState = document.getElementById('empty-state');
         const wordCountSpan = document.getElementById('word-count');
         const toast = document.getElementById('toast');
@@ -1547,7 +1556,9 @@
             const term = searchInput.value.toLowerCase();
             const posFilter = filterPos.value;
             const tagFilter = filterTag.value;
+            const sortVal = sortOrder.value; // Get sort value
 
+            // 1. Filter
             const filtered = vocabList.filter(item => {
                 const matchesTerm = 
                     item.word.toLowerCase().includes(term) || 
@@ -1563,12 +1574,25 @@
                 return matchesTerm && matchesPos && matchesTag;
             });
 
+            // 2. Sort
+            if (sortVal === 'az') {
+                filtered.sort((a, b) => a.word.localeCompare(b.word));
+            } else if (sortVal === 'za') {
+                filtered.sort((a, b) => b.word.localeCompare(a.word));
+            } else if (sortVal === 'oldest') {
+                filtered.sort((a, b) => a.id - b.id);
+            } else {
+                // Newest (Default)
+                filtered.sort((a, b) => b.id - a.id);
+            }
+
             renderList(filtered);
         }
 
         searchInput.addEventListener('input', filterWords);
         filterPos.addEventListener('change', filterWords);
         filterTag.addEventListener('change', filterWords);
+        // sortOrder event listener is handled via onchange attribute in HTML, but can be added here too if desired.
 
         // --- Delete Word ---
         window.deleteWord = (id) => {
