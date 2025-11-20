@@ -125,7 +125,7 @@
         <span id="toast-message" class="truncate">Action successful</span>
     </div>
 
-    <!-- Alert Modal (Custom replacement for window.alert) -->
+    <!-- Alert Modal -->
     <div id="alert-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 transform transition-all scale-100 animate-[fadeIn_0.2s_ease-out]">
             <div class="text-center">
@@ -141,7 +141,7 @@
         </div>
     </div>
 
-    <!-- Confirm Modal (Custom replacement for window.confirm) -->
+    <!-- Confirm Modal -->
     <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 transform transition-all scale-100 animate-[fadeIn_0.2s_ease-out]">
             <div class="text-center">
@@ -441,7 +441,6 @@
 
                 <!-- Filter Controls -->
                 <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
-                    <!-- NEW: Sort Dropdown -->
                     <select id="sort-order" onchange="filterWords()" class="flex-1 sm:flex-none px-4 py-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-200 outline-none text-sm text-gray-600 cursor-pointer min-w-[120px]">
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
@@ -486,8 +485,8 @@
                 <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="fas fa-layer-group text-indigo-600 text-3xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2 font-serif-display">Flashcard Practice</h2>
-                <p class="text-gray-500 mb-8">Review and memorize your vocabulary with interactive cards.</p>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2 font-serif-display">Smart Practice</h2>
+                <p class="text-gray-500 mb-8">Prioritizes words you haven't mastered yet.</p>
                 
                 <div class="max-w-sm mx-auto space-y-4">
                     <div>
@@ -499,12 +498,13 @@
                     </div>
                     
                     <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-100">
-                        <span class="text-sm font-medium text-gray-700">Shuffle Order</span>
+                        <span class="text-sm font-medium text-gray-700">Shuffle Randomly</span>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="practice-shuffle" class="sr-only peer" checked>
+                            <input type="checkbox" id="practice-shuffle" class="sr-only peer">
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
+                    <p class="text-xs text-gray-400 text-left ml-1">Default: Sorts by mastery (Hardest words first)</p>
 
                     <button onclick="startPractice()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">
                         Start Session
@@ -538,7 +538,7 @@
                             </div>
                             
                             <div class="absolute bottom-8 text-gray-400 text-sm animate-pulse">
-                                <i class="fas fa-sync-alt mr-2"></i> Click to flip
+                                <i class="fas fa-sync-alt mr-2"></i> Tap to flip
                             </div>
                         </div>
 
@@ -555,10 +555,6 @@
                                     <p id="fc-back-sentence" class="text-indigo-100 italic text-lg">"Fashions are ephemeral, changing with every season."</p>
                                 </div>
 
-                                <div id="fc-back-tags" class="flex flex-wrap justify-center gap-2 mt-4">
-                                    <!-- Tags injected here -->
-                                </div>
-                                
                                 <button onclick="event.stopPropagation(); speakWord(currentPracticeCard.word)" class="mt-4 p-3 bg-white/20 hover:bg-white/30 rounded-full transition-colors text-white">
                                     <i class="fas fa-volume-up text-lg"></i>
                                 </button>
@@ -567,17 +563,40 @@
                     </div>
                 </div>
 
-                <!-- Controls -->
-                <div class="mt-8 grid grid-cols-2 gap-4">
-                    <button onclick="prevCard()" class="py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors shadow-sm">
-                        <i class="fas fa-chevron-left mr-2"></i> Previous
+                <!-- Updated Controls -->
+                <div class="mt-8 grid grid-cols-3 gap-4">
+                    <button onclick="markResult(false)" class="py-3 bg-red-100 text-red-700 border border-red-200 rounded-xl font-bold hover:bg-red-200 transition-colors shadow-sm flex flex-col items-center justify-center leading-tight">
+                        <span>Missed it</span>
+                        <span class="text-[10px] font-normal">Reset score</span>
                     </button>
-                    <button onclick="nextCard()" class="py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-md">
-                        Next <i class="fas fa-chevron-right ml-2"></i>
+                    
+                    <button onclick="flipCard()" class="py-3 bg-gray-100 text-gray-700 border border-gray-200 rounded-xl font-medium hover:bg-gray-200 transition-colors shadow-sm">
+                        Flip Card
+                    </button>
+
+                    <button onclick="markResult(true)" class="py-3 bg-green-100 text-green-700 border border-green-200 rounded-xl font-bold hover:bg-green-200 transition-colors shadow-sm flex flex-col items-center justify-center leading-tight">
+                        <span>Got it!</span>
+                        <span class="text-[10px] font-normal">+1 Mastery</span>
                     </button>
                 </div>
-                <p class="text-center text-xs text-gray-400 mt-4">Tip: Use Space to flip, Arrow keys to navigate</p>
-
+            </div>
+            
+            <!-- Summary Screen -->
+            <div id="practice-summary" class="hidden bg-white rounded-2xl shadow-sm p-8 text-center border border-gray-100 flex-col items-center justify-center py-12">
+                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mb-6 mx-auto">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Session Complete!</h2>
+                <p class="text-gray-500 mb-8">You reviewed <span id="summary-count" class="font-bold text-indigo-600">0</span> words.</p>
+                
+                <div class="flex gap-4 justify-center w-full max-w-xs mx-auto">
+                     <button onclick="exitPractice()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors">
+                        Back to List
+                    </button>
+                    <button onclick="startPractice()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-colors">
+                        Practice Again
+                    </button>
+                </div>
             </div>
             
             <!-- Empty Practice State -->
@@ -674,6 +693,7 @@
         let practiceDeck = [];
         let practiceIndex = 0;
         let currentPracticeCard = null;
+        let practiceResults = { correct: 0, total: 0 };
 
         // Multi-select state
         let selectedPositions = {
@@ -687,7 +707,7 @@
         const searchInput = document.getElementById('search-input');
         const filterPos = document.getElementById('filter-pos');
         const filterTag = document.getElementById('filter-tag');
-        const sortOrder = document.getElementById('sort-order'); // NEW
+        const sortOrder = document.getElementById('sort-order');
         const emptyState = document.getElementById('empty-state');
         const wordCountSpan = document.getElementById('word-count');
         const toast = document.getElementById('toast');
@@ -711,6 +731,7 @@
         const practiceSetup = document.getElementById('practice-setup');
         const practiceGame = document.getElementById('practice-game');
         const practiceEmpty = document.getElementById('practice-empty');
+        const practiceSummary = document.getElementById('practice-summary');
         const practiceFilterTag = document.getElementById('practice-filter-tag');
         const flashcard = document.getElementById('flashcard');
         const fcFrontWord = document.getElementById('fc-front-word');
@@ -718,9 +739,9 @@
         const fcBackMeaning = document.getElementById('fc-back-meaning');
         const fcBackSentence = document.getElementById('fc-back-sentence');
         const fcBackSentenceContainer = document.getElementById('fc-back-sentence-container');
-        const fcBackTags = document.getElementById('fc-back-tags');
         const currentCardNum = document.getElementById('current-card-num');
         const totalCardNum = document.getElementById('total-card-num');
+        const summaryCount = document.getElementById('summary-count');
 
 
         // --- Global Modal Helpers ---
@@ -797,8 +818,6 @@
             renderQuickTags();
             updateTagFilterOptions();
             updateDatalist();
-            
-            // Initialize Practice Filter
             updatePracticeFilter();
             
             // Close dropdowns when clicking outside
@@ -935,25 +954,32 @@
             const shouldShuffle = document.getElementById('practice-shuffle').checked;
 
             // Filter Deck
-            practiceDeck = vocabList.filter(item => {
+            let tempDeck = vocabList.filter(item => {
                 if (tagFilter === 'all') return true;
                 return item.tags && item.tags.includes(tagFilter);
             });
 
-            if (practiceDeck.length === 0) {
+            if (tempDeck.length === 0) {
                 practiceSetup.classList.add('hidden');
                 practiceEmpty.classList.remove('hidden');
                 return;
             }
 
-            // Shuffle if needed
+            // Sorting Logic: Priority to words with lower mastery (if not shuffling)
             if (shouldShuffle) {
-                practiceDeck.sort(() => Math.random() - 0.5);
+                tempDeck.sort(() => Math.random() - 0.5);
+            } else {
+                // Smart Sort: Mastery 0 first, then 1, etc.
+                tempDeck.sort((a, b) => (a.mastery || 0) - (b.mastery || 0));
             }
 
+            practiceDeck = tempDeck;
             practiceIndex = 0;
+            practiceResults = { correct: 0, total: practiceDeck.length };
+
             practiceSetup.classList.add('hidden');
             practiceEmpty.classList.add('hidden');
+            practiceSummary.classList.add('hidden');
             practiceGame.classList.remove('hidden');
             practiceGame.classList.add('flex');
             
@@ -964,17 +990,15 @@
             practiceGame.classList.add('hidden');
             practiceGame.classList.remove('flex');
             practiceEmpty.classList.add('hidden');
+            practiceSummary.classList.add('hidden');
             practiceSetup.classList.remove('hidden');
         };
 
         window.renderCard = () => {
-            // Reset Flip state
             flashcard.classList.remove('flipped');
             
-            // Update Data
             currentPracticeCard = practiceDeck[practiceIndex];
             
-            // Front
             fcFrontWord.textContent = currentPracticeCard.word;
             
             // Multiple parts of speech
@@ -983,8 +1007,6 @@
                 return `<span class="px-2 py-1 rounded-full text-xs font-medium border ${posClass}">${pos}</span>`;
             }).join('');
             
-            // Back
-            // Allow a small delay to update back content so user doesn't see it change while flipping back
             setTimeout(() => {
                 fcBackMeaning.textContent = currentPracticeCard.meaning;
                 
@@ -994,13 +1016,8 @@
                 } else {
                     fcBackSentenceContainer.classList.add('hidden');
                 }
-
-                fcBackTags.innerHTML = currentPracticeCard.tags.map(tag => 
-                    `<span class="px-2 py-0.5 bg-white/20 rounded text-xs font-medium border border-white/30 text-white">#${tag}</span>`
-                ).join('');
             }, 300);
 
-            // Update Progress
             currentCardNum.textContent = practiceIndex + 1;
             totalCardNum.textContent = practiceDeck.length;
         };
@@ -1009,25 +1026,37 @@
             flashcard.classList.toggle('flipped');
         };
 
-        window.nextCard = () => {
+        // Mark result: "Got it" or "Missed it"
+        window.markResult = (success) => {
+            // Update Mastery Score
+            const wordIndex = vocabList.findIndex(w => w.id === currentPracticeCard.id);
+            if (wordIndex !== -1) {
+                let currentMastery = vocabList[wordIndex].mastery || 0;
+                if (success) {
+                    vocabList[wordIndex].mastery = Math.min(currentMastery + 1, 5);
+                    practiceResults.correct++;
+                } else {
+                    vocabList[wordIndex].mastery = Math.max(0, currentMastery - 1); // Reset or decrease
+                }
+                saveData(); // Save the progress
+            }
+
+            // Next Card
             if (practiceIndex < practiceDeck.length - 1) {
                 practiceIndex++;
                 renderCard();
             } else {
-                // Loop back or finish? Let's loop for continuous study
-                if(confirm("You've reached the end of the deck. Restart?")) {
-                     practiceIndex = 0;
-                     renderCard();
-                }
+                finishPractice();
             }
         };
 
-        window.prevCard = () => {
-            if (practiceIndex > 0) {
-                practiceIndex--;
-                renderCard();
-            }
-        };
+        function finishPractice() {
+            practiceGame.classList.add('hidden');
+            practiceGame.classList.remove('flex');
+            summaryCount.textContent = practiceDeck.length;
+            practiceSummary.classList.remove('hidden');
+            practiceSummary.classList.add('flex');
+        }
 
         // Keyboard support for practice
         document.addEventListener('keydown', (e) => {
@@ -1035,11 +1064,8 @@
                 if (e.code === 'Space') {
                     e.preventDefault(); // Prevent scrolling
                     flipCard();
-                } else if (e.code === 'ArrowRight') {
-                    nextCard();
-                } else if (e.code === 'ArrowLeft') {
-                    prevCard();
                 }
+                // Can add shortcuts for correct/incorrect if desired, e.g. Left/Right arrows
             }
         });
 
@@ -1497,6 +1523,13 @@
 
             const newWordText = document.getElementById('word').value.trim();
 
+            // Check for Duplicate (Case-insensitive)
+            const exists = vocabList.some(w => w.word.toLowerCase() === newWordText.toLowerCase());
+            if (exists) {
+                showAlert(`"${newWordText}" is already in your vocabulary list.`);
+                return;
+            }
+
             // Validate at least one part of speech is selected
             if (selectedPositions.add.length === 0) {
                 showAlert('Please select at least one part of speech.');
@@ -1511,7 +1544,8 @@
                 sentence: document.getElementById('sentence').value.trim(),
                 connections: [...currentConnections],
                 tags: document.getElementById('tags').value.split(',').map(t => t.trim()).filter(t => t),
-                dateAdded: new Date().toLocaleDateString()
+                dateAdded: new Date().toLocaleDateString(),
+                mastery: 0 // New Field for Practice Mode
             };
 
             if (newWord.connections && newWord.connections.length > 0) {
@@ -1556,7 +1590,7 @@
             const term = searchInput.value.toLowerCase();
             const posFilter = filterPos.value;
             const tagFilter = filterTag.value;
-            const sortVal = sortOrder.value; // Get sort value
+            const sortVal = sortOrder.value;
 
             // 1. Filter
             const filtered = vocabList.filter(item => {
@@ -1566,7 +1600,6 @@
                     item.tags.some(tag => tag.toLowerCase().includes(term)) ||
                     (item.connections && item.connections.some(c => c.word.toLowerCase().includes(term)));
                 
-                // Handle both array and string pos for backward compatibility
                 const posArray = Array.isArray(item.pos) ? item.pos : [item.pos];
                 const matchesPos = posFilter === 'all' || posArray.includes(posFilter);
                 const matchesTag = tagFilter === 'all' || item.tags.includes(tagFilter);
@@ -1582,7 +1615,6 @@
             } else if (sortVal === 'oldest') {
                 filtered.sort((a, b) => a.id - b.id);
             } else {
-                // Newest (Default)
                 filtered.sort((a, b) => b.id - a.id);
             }
 
@@ -1592,7 +1624,6 @@
         searchInput.addEventListener('input', filterWords);
         filterPos.addEventListener('change', filterWords);
         filterTag.addEventListener('change', filterWords);
-        // sortOrder event listener is handled via onchange attribute in HTML, but can be added here too if desired.
 
         // --- Delete Word ---
         window.deleteWord = (id) => {
@@ -1681,7 +1712,6 @@
             emptyState.classList.add('hidden');
 
             list.forEach(item => {
-                // Handle both array and string pos for backward compatibility
                 const posArray = Array.isArray(item.pos) ? item.pos : [item.pos];
                 const posHtml = posArray.map(pos => {
                     const posClass = posColors[pos] || posColors['default'];
@@ -1713,6 +1743,12 @@
                        </div>`
                     : '';
 
+                // Mastery Color Dot
+                let masteryColor = 'bg-gray-200';
+                if (item.mastery >= 4) masteryColor = 'bg-green-500';
+                else if (item.mastery >= 2) masteryColor = 'bg-yellow-400';
+                else if (item.mastery > 0) masteryColor = 'bg-orange-400';
+
                 const card = document.createElement('div');
                 card.setAttribute('onclick', `openDetailModal(${item.id})`);
                 card.className = 'bg-white rounded-xl p-5 sm:p-6 shadow-sm border border-gray-100 card-hover fade-in relative group cursor-pointer';
@@ -1737,6 +1773,7 @@
                     </div>
 
                     <div class="flex items-baseline gap-3 mb-1 pr-32 sm:pr-36 flex-wrap">
+                         <div class="w-2 h-2 rounded-full ${masteryColor} shrink-0" title="Mastery Level"></div>
                         <h3 class="text-xl sm:text-2xl font-bold text-gray-900 font-serif-display tracking-wide break-words">${item.word}</h3>
                         <div class="flex flex-wrap gap-1">
                             ${posHtml}
@@ -1759,7 +1796,6 @@
         
         let preferredLang = localStorage.getItem('preferredLang') || 'en_US';
         
-        // Initialize the settings dropdown on load
         const settingsLangSelect = document.getElementById('settings-lang');
         if(settingsLangSelect) {
             settingsLangSelect.value = preferredLang;
@@ -1782,40 +1818,32 @@
                 return;
             }
 
-            // Loading State
             const originalIcon = icon.className;
             icon.className = 'fas fa-spinner fa-spin';
             btn.disabled = true;
             btn.classList.add('opacity-75', 'cursor-not-allowed');
 
             try {
-                // 1. Always fetch English data first for POS and Sentence (DictionaryAPI is best for this)
                 const dictResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
                 
                 if (!dictResponse.ok) throw new Error('Word not found');
                 
                 const data = await dictResponse.json();
                 const entry = data[0];
-                // Fallback if no definitions exist
                 if (!entry.meanings || entry.meanings.length === 0) throw new Error('No definition found');
 
-                // "Short and Simple" Heuristic:
-                // Look at the first 3 definitions (to stay relevant) and pick the shortest one.
                 const meanings = entry.meanings[0].definitions;
                 let potentialDefs = meanings.slice(0, 3).map(d => d.definition);
                 let definition = potentialDefs.reduce((a, b) => a.length <= b.length ? a : b);
 
                 let sentence = entry.meanings[0].definitions[0].example || "";
                 
-                // Map API POS to App POS
-                const apiPos = entry.meanings[0].partOfSpeech; // e.g., "noun"
+                const apiPos = entry.meanings[0].partOfSpeech; 
                 const mappedPos = mapPosToApp(apiPos);
 
-                // 2. If user wants non-English, we translate the definition
                 if (preferredLang !== 'en_US') {
-                    const langCode = preferredLang; // e.g. 'zh-TW'
+                    const langCode = preferredLang;
                     
-                    // Using MyMemory Translation API
                     const transResponse = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(definition)}&langpair=en|${langCode}`);
                     const transData = await transResponse.json();
                     
@@ -1824,15 +1852,11 @@
                     }
                 }
 
-                // 3. Populate UI
                 document.getElementById('meaning').value = definition;
                 if(sentence) document.getElementById('sentence').value = sentence;
 
-                // Auto-select Part of Speech
                 if (mappedPos) {
-                    // Clear current selections via reset function
                     clearPosSelection('add');
-                    // Add new selection
                     togglePosSelection(mappedPos, 'add');
                 }
 
@@ -1842,7 +1866,6 @@
                 console.error(error);
                 showAlert('Could not find definition. Please ensure spelling is correct (English words only).');
             } finally {
-                // Reset Button
                 icon.className = originalIcon;
                 btn.disabled = false;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
